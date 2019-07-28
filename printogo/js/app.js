@@ -37,6 +37,23 @@ function vista(e) {
   `;
   var indiceArchivo = 5;
   if (selected_value.is("#ploteo")) indiceArchivo = 4;
+  let folder = "";
+  if (selected_value.is("#estandar")){
+   folder = `
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" name="folder" id="folder">
+        <label class="form-check-label texto-chico" for="folder">
+          Agregar Folder
+        </label>
+      </div>
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" name="sobre" id="sobre">
+        <label class="form-check-label texto-chico" for="sobre">
+          Agregar Sobre
+        </label>
+      </div>
+   `; 
+  }
   var archivo = `
     <h3 class="text-center font-weight-bold text-black">${indiceArchivo}) Sube Tu Archivo</h3>
     <div data-widget-host="habitat" id="wt_embed">
@@ -55,20 +72,9 @@ function vista(e) {
     <input type="number" class="form-control" name="paginasAImprimir" placeholder="# Paginas a imprimir " min="0" step="1" pattern="[0-9]">
     <input type="number" class="form-control" name="copias" placeholder="Copias" min="1" step="1" pattern="[0-9]">
     <textarea class="form-control mt-1" name="additional" rows="2" placeholder="Ingresa instrucciones adicionales (opcional)"></textarea>
-    <div class="form-check mb-2">
-      <input class="form-check-input" type="checkbox" name="folder[]" id="folder">
-      <label class="form-check-label texto-chico" for="folder">
-        Agregar Folder
-      </label>
-    </div>
-    <div class="form-check mb-2">
-      <input class="form-check-input" type="checkbox" name="sobre[]" id="sobre">
-      <label class="form-check-label texto-chico" for="sobre">
-        Agregar Sobre
-      </label>
-    </div>
+    ${folder}
     <p class="text-black mt-1">Costo Del Documento: <span id="costo-documento">$0.00</span></p>
-    <input class="input-cost-documento" type="hidden" name="costo[]" >
+    <input id="input-cost-documento" type="hidden" name="costo" >
   `;
   var submitButton = `
     <button type="button" class="btn btn-lg btn-primary mt-1 mb-1" id="add-other">Agregar Otra Impresión</button>
@@ -179,10 +185,10 @@ function backBtn() {
   console.log("back");
   $(".form-payment").remove();
   $(".instructions-div").removeClass("d-none");
-    $(".form-file")
-      .removeClass("col-md-4 col-lg-4 collapse")
-      .addClass("col-md-8 col-lg-6");
-    $(".form-file :input").attr("disabled", false);
+  $(".form-file")
+    .removeClass("col-md-4 col-lg-4 collapse")
+    .addClass("col-md-8 col-lg-6");
+  $(".form-file :input").attr("readonly", true);
 }
 
 function nextBtn() {
@@ -206,7 +212,7 @@ function nextBtn() {
     $(".form-file")
       .removeClass("col-md-8 col-lg-6")
       .addClass("col-md-4 col-lg-4 collapse");
-    $(".form-file :input").attr("disabled", true);
+    $(".form-file :input").attr("readonly", true);
 
     // Funcion para crear forma de información de Usuario
     var formInfo = `
@@ -216,23 +222,26 @@ function nextBtn() {
         <label><i class="mt-3 fas fa-phone"></i><input type="tel" class="form-control phone mt-3" name="cellphone" placeholder="Tu celular"></label>
         <label><i class="mt-3 fas fa-map-marker-alt"></i><input type="text" class="form-control mt-3" name="address" placeholder="Dirección de entrega:"></label>
         <input type="button" id="return-btn" class="btn btn-secondary mt-3 mb-3" value="Atrás" />
-        <input type="button" id="pay-btn" class="btn btn-success mb-3" value="Proceder al Pago" />
+        <input type="submit" id="pay-btn" class="btn btn-success mb-3" value="Proceder al Pago" />
     </div>
     `;
     $(".form-file").after(formInfo);
   } else {
-    console.log(tipoImpresion.val(),
-    tipoPapel.val(),
-    tamano.val(),
-    color.val(),
-    file.val(),
-    paginasAImprimir.val(), 
-    copias.val());
+    console.log(
+      tipoImpresion.val(),
+      tipoPapel.val(),
+      tamano.val(),
+      color.val(),
+      file.val(),
+      paginasAImprimir.val(),
+      copias.val()
+    );
     alert("Revisa que hallas llenado todos los campos.");
   }
 }
 
 function payment() {
+  $("input[type: ]")
   alert("Gracias por probar el sistema\n Lo lanzaremos lo mas pronto posible");
 }
 
@@ -491,14 +500,15 @@ function priceCalc() {
   if (costoDocumento === 0) {
     $("#costo-documento").html(`$--.--`);
   } else {
-    if($('#folder').is(':checked')) {
+    if ($("#folder").is(":checked")) {
       costoDocumento += 5;
     }
-    if($("#sobre").is(':checked')) {
+    if ($("#sobre").is(":checked")) {
       costoDocumento += 5;
     }
     $("#costo-documento").html(`$${costoDocumento.toFixed(2)}`);
-    $(".input-cost-document").change(costoDocumento.toFixed(2));
+    console.log($("#input-cost-documento"));
+    $("#input-cost-documento").val(costoDocumento);
   }
 }
 
@@ -509,8 +519,19 @@ function calcCostoDocumento(
   precioDocumento
 ) {
   if (paginasAImprimir.val() && copias.val()) {
-    precioDocumento = precioHoja * parseInt(paginasAImprimir.val()) * parseInt(copias.val());
+    precioDocumento =
+      precioHoja * parseInt(paginasAImprimir.val()) * parseInt(copias.val());
     return precioDocumento;
   }
   return 0;
 }
+
+// Form validation
+$(document).on("click", "form button[type=submit]", function(e) {
+  var isValid = $(e.target)
+    .parents("form")
+    .isValid();
+  if (!isValid) {
+    e.preventDefault(); //prevent the default action
+  }
+});
